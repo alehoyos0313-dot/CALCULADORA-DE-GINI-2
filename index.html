@@ -1,0 +1,1237 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Gini Económico | Curva de Lorenz</title>
+<style>
+:root{--bg:#f4f7fb;--card:#fff;--ink:#172033;--muted:#667085;--primary:#3157d5;--purple:#6d4aff;--border:#dfe5ef;--good:#16865b;--warn:#a76500;--bad:#c0392b}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,Arial,sans-serif}.wrap{max-width:1220px;margin:auto;padding:24px 16px 60px}
+.hero{background:linear-gradient(135deg,#243b9f,#704ee8);color:#fff;border-radius:24px;padding:30px;box-shadow:0 14px 40px #243b9f25;margin-bottom:18px}.hero h1{margin:0 0 8px;font-size:32px}.hero p{margin:0;line-height:1.55;opacity:.94}
+.card{background:#fff;border:1px solid var(--border);border-radius:18px;padding:22px;margin-bottom:18px;box-shadow:0 7px 22px #15233d08}.card h2{margin:0 0 15px;font-size:20px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}.full{grid-column:1/-1}
+textarea{width:100%;min-height:190px;border:2px solid var(--border);border-radius:14px;padding:15px;font-size:16px;resize:vertical;outline:none}textarea:focus{border-color:var(--primary)}
+.help{font-size:13px;color:var(--muted);line-height:1.5}.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}button{border:0;border-radius:11px;padding:11px 16px;font-weight:700;cursor:pointer}.primary{background:var(--primary);color:#fff}.secondary{background:#edf1ff;color:#2946aa}.neutral{background:#eef1f5;color:#333}.danger{background:#fff0ef;color:var(--bad)}
+.alert{padding:12px 14px;border-radius:12px;margin-top:12px;line-height:1.5;font-size:14px}.warning{background:#fff7e8;color:#805000}.error{background:#fff0ef;color:#9d2c21}.success{background:#edf9f3;color:#176846}
+.stats{display:grid;grid-template-columns:repeat(6,1fr);gap:10px}.stat{background:#f7f9fc;border:1px solid var(--border);border-radius:13px;padding:12px}.stat span{display:block;font-size:12px;color:var(--muted)}.stat strong{font-size:19px}
+.gini{display:flex;gap:28px;align-items:center;flex-wrap:wrap}.big{font-size:50px;font-weight:800;color:var(--primary)}.scale{flex:1;min-width:280px}.track{height:18px;border-radius:20px;background:linear-gradient(90deg,#51a56e 0 20%,#8fba65 20% 30%,#d5bd59 30% 40%,#e49a50 40% 50%,#d95c58 50% 100%);position:relative}.pin{position:absolute;top:-7px;width:5px;height:32px;border-radius:5px;background:#172033;transform:translateX(-50%)}.scaleLabels{display:flex;justify-content:space-between;color:var(--muted);font-size:12px;margin-top:7px}.rangeBox{border:1px solid var(--border);border-radius:14px;padding:16px;margin-top:15px;background:#fafbfe}.rangeTitle{font-weight:800;font-size:17px}.legend{display:grid;grid-template-columns:repeat(5,1fr);gap:7px;margin-top:13px}.legend div{padding:9px;border-radius:9px;font-size:12px;text-align:center;border:1px solid #e6e9ef}.r1{background:#edf8f0}.r2{background:#f2f9e9}.r3{background:#fff9e8}.r4{background:#fff2df}.r5{background:#fff0ef}
+.chart{height:470px;border:1px solid var(--border);border-radius:15px;padding:8px;background:#fff}.chart canvas{width:100%;height:100%}
+.result{line-height:1.68;color:#333}.step{border-left:4px solid #5c63d8;background:#f8f9ff;padding:10px 14px;margin:8px 0;border-radius:0 10px 10px 0;line-height:1.55}
+.tableWrap{overflow:auto;max-height:440px;border:1px solid var(--border);border-radius:12px}table{border-collapse:collapse;width:100%;font-size:14px}th,td{padding:9px;border-bottom:1px solid #edf0f4;text-align:right;white-space:nowrap}th{position:sticky;top:0;background:#f5f7fb}th:first-child,td:first-child{text-align:center}
+.hidden{display:none}.tag{display:inline-block;padding:5px 9px;border-radius:99px;background:#eef1ff;color:#2946aa;font-size:12px;font-weight:700}
+@media(max-width:900px){.grid{grid-template-columns:1fr}.full{grid-column:auto}.stats{grid-template-columns:repeat(2,1fr)}.legend{grid-template-columns:1fr 1fr}.hero h1{font-size:26px}}
+@media print{.noPrint{display:none!important}.card{box-shadow:none;break-inside:avoid}.hero{box-shadow:none}}
+
+.keypad{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:8px}
+.keypad button{background:#f0f2f7;color:#27324a;border:1px solid #dce1eb;padding:12px;font-size:16px}
+.keypad .wide{grid-column:span 2}
+.chips{display:flex;flex-wrap:wrap;gap:7px;margin-top:10px}
+.chip{background:#f3f5fa;border:1px solid #dfe4ee;border-radius:9px;padding:7px 9px;font-size:12px}
+.chip button{padding:1px 5px;margin-left:5px;background:transparent;color:#c0392b}
+
+/* ===== REDISEÑO VISUAL · GINI ECONÓMICO ===== */
+:root{
+ --bg:#071225;--bg2:#0c1830;--card:#0e1b32;--card2:#101f3b;--ink:#eef5ff;
+ --muted:#91a4c2;--primary:#238cff;--purple:#7657ff;--cyan:#18d5e8;
+ --green:#22d3a5;--pink:#f34b8b;--orange:#ffb52e;--border:#203453;
+ --shadow:0 18px 50px rgba(0,0,0,.28);
+}
+html{background:var(--bg)}
+body{
+ background:
+ radial-gradient(circle at 8% 8%,rgba(41,121,255,.16),transparent 28%),
+ radial-gradient(circle at 90% 15%,rgba(118,87,255,.14),transparent 30%),
+ linear-gradient(145deg,#061022,#09152b 55%,#071225);
+ color:var(--ink);
+ min-height:100vh;
+}
+.wrap{max-width:1500px;padding:16px 14px 50px}
+.hero{
+ grid-column:1/-1;
+ position:relative;
+ display:grid;
+ grid-template-columns:1.15fr 1fr auto;
+ align-items:center;
+ gap:22px;
+ background:linear-gradient(135deg,#0b1d3b 0%,#102858 55%,#16245a 100%);
+ border:1px solid #27446d;
+ border-radius:22px;
+ padding:20px 24px;
+ box-shadow:var(--shadow);
+ overflow:hidden;
+}
+.hero:after{
+ content:"";
+ position:absolute;right:-100px;top:-120px;width:380px;height:380px;border-radius:50%;
+ background:radial-gradient(circle,rgba(35,140,255,.25),transparent 65%);
+ pointer-events:none;
+}
+.brandRow{display:flex;align-items:center;gap:13px;position:relative;z-index:1}
+.brandMark{
+ width:54px;height:54px;border-radius:15px;display:grid;place-items:center;
+ background:linear-gradient(135deg,#18d5e8,#238cff);
+ color:#fff;font-size:32px;font-weight:900;box-shadow:0 10px 30px rgba(24,213,232,.22)
+}
+.eyebrow{font-size:10px;letter-spacing:2.5px;color:#8ea6cf;margin-bottom:3px}
+.hero h1{font-size:31px;letter-spacing:.5px;margin:0;line-height:1.05}
+.hero h1 span{color:#238cff}
+.hero p{margin:5px 0 0;color:#a9bbd6;font-size:14px}
+.heroInfo{display:flex;flex-wrap:wrap;gap:8px;align-items:center;position:relative;z-index:1;font-size:12px;color:#dce7f8}
+.heroInfo small{width:100%;color:#8ea6c9;line-height:1.45;margin-top:3px}
+.heroActions{display:flex;gap:8px;position:relative;z-index:1;flex-wrap:wrap;justify-content:flex-end}
+.heroBtn{padding:10px 13px;border-radius:11px;color:#fff;border:1px solid rgba(255,255,255,.12);font-size:12px}
+.heroBtn.purple{background:linear-gradient(135deg,#6d4aff,#875cff)}
+.heroBtn.green{background:linear-gradient(135deg,#10b981,#18cda5)}
+.heroBtn.blue{background:linear-gradient(135deg,#1689ef,#2676ff)}
+.card{
+ background:linear-gradient(145deg,rgba(16,31,59,.98),rgba(10,25,48,.98));
+ border:1px solid var(--border);
+ border-radius:17px;
+ box-shadow:0 14px 35px rgba(0,0,0,.18);
+ color:var(--ink);
+}
+.card h2{font-size:17px;color:#e9f2ff;margin:0}
+.card h3{color:#dce8fa}
+.card p,.help{color:var(--muted)}
+.sectionHead{display:flex;align-items:center;gap:12px;margin-bottom:17px}
+.sectionHead p{margin:3px 0 0;font-size:12px;color:var(--muted)}
+.sectionHead.compact{margin-bottom:15px}
+.numBadge,.iconBadge{
+ width:38px;height:38px;flex:0 0 38px;border-radius:12px;display:grid;place-items:center;
+ color:#fff;font-weight:900;background:linear-gradient(135deg,#1689ef,#7657ff);
+ box-shadow:0 8px 20px rgba(35,140,255,.2)
+}
+.iconBadge{font-size:19px}
+.greenIcon{background:linear-gradient(135deg,#13b981,#22d3a5)}
+.blueIcon{background:linear-gradient(135deg,#1689ef,#2676ff)}
+.purpleIcon{background:linear-gradient(135deg,#7657ff,#a34cff)}
+.pinkIcon{background:linear-gradient(135deg,#ef4f8c,#ff6b6b)}
+.cyanIcon{background:linear-gradient(135deg,#00bcd4,#18d5e8)}
+.orangeIcon{background:linear-gradient(135deg,#f59e0b,#ffb52e)}
+input,select,textarea{
+ background:#0a1730!important;color:#edf5ff!important;border:1px solid #29415f!important;
+ box-shadow:inset 0 0 0 1px rgba(255,255,255,.015)
+}
+input::placeholder,textarea::placeholder{color:#617795}
+input:focus,textarea:focus,select:focus{border-color:#238cff!important;box-shadow:0 0 0 3px rgba(35,140,255,.12)}
+button{transition:.18s ease;box-shadow:none}
+button:hover{transform:translateY(-1px);filter:brightness(1.07)}
+.primary{background:linear-gradient(135deg,#1689ef,#2676ff);color:#fff}
+.secondary{background:linear-gradient(135deg,#6547e9,#8058ff);color:#fff}
+.neutral{background:#152641;color:#dce8fa;border:1px solid #29415f}
+.danger{background:#32182a;color:#ff7ca9;border:1px solid #6d2948}
+.keypad button{background:#12213b;color:#e6effc;border:1px solid #29415f}
+.keypad button:hover{background:#183052}
+.chip{background:#0d2940;border:1px solid #17516a;color:#bceeff}
+.chip button{color:#ff6d9e}
+.registeredTitle{margin-top:15px;color:#dbe9fb;font-size:12px;font-weight:800;letter-spacing:.5px}
+.gini{background:linear-gradient(135deg,rgba(16,38,69,.8),rgba(11,27,49,.7));border:1px solid #254565;border-radius:15px;padding:16px}
+.giniMain{min-width:220px}
+.big{font-size:56px;line-height:1;color:#3be7c0;text-shadow:0 0 24px rgba(59,231,192,.16)}
+.giniPill{display:inline-block;margin-top:8px;padding:7px 11px;border-radius:99px;background:rgba(255,181,46,.14);border:1px solid rgba(255,181,46,.28);color:#ffc95c;font-size:11px;font-weight:900;letter-spacing:.6px}
+.track{height:17px;background:linear-gradient(90deg,#16c784 0 20%,#72c742 20% 30%,#ffc338 30% 40%,#ff9346 40% 50%,#ff4d68 50% 100%);box-shadow:0 0 18px rgba(35,140,255,.12)}
+.pin{background:#fff;box-shadow:0 0 12px rgba(255,255,255,.75)}
+.rangeBox{background:#0b1930;border-color:#29415f}
+.rangeTitle{color:#eaf3ff}
+.legend div{color:#e8f2ff;border-color:#29415f!important}
+.r1{background:#0d2e2a}.r2{background:#1b2f1e}.r3{background:#3a3018}.r4{background:#3d281b}.r5{background:#391d2b}
+.stats{gap:9px}
+.stat{background:linear-gradient(145deg,#122442,#0d1c35);border-color:#26405f}
+.stat span{color:#7f96b7}
+.stat strong{color:#e9f4ff}
+.alert{border:1px solid #26445f}
+.success{background:#0b2d2a;color:#9ff4d9;border-color:#1b635b}
+.warning{background:#332914;color:#ffd27a;border-color:#6e5321}
+.error{background:#381b25;color:#ff91b2;border-color:#6f2b46}
+.chart{background:#09172c;border-color:#29415f}
+.chart canvas{filter:drop-shadow(0 5px 15px rgba(35,140,255,.08))}
+.tableWrap{border-color:#29415f}
+table{color:#dce8f8}
+th{background:#122541;color:#b9cbe4;border-color:#29415f}
+td{border-color:#1b304b}
+.step{border-left-color:#7657ff;background:#0e203a;color:#d8e5f7}
+.result{color:#d5e2f4}
+.tag{background:#152d4c;color:#6ddcff}
+#status{background:#08251f;color:#4ee4b4;border-color:#155f53}
+.hidden{display:none}
+body>.wrap{display:grid;grid-template-columns:330px minmax(0,1fr);gap:14px}
+body>.wrap>.hero{grid-column:1/-1}
+body>.wrap>section.card:first-of-type{grid-column:1;grid-row:2 / span 2;align-self:start;position:sticky;top:14px}
+body>.wrap>#app{grid-column:2;grid-row:2}
+body>.wrap>#app>.grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+body>.wrap>#app>.grid>.full{grid-column:1/-1}
+#app .card{margin-bottom:0}
+#app>.grid{gap:14px}
+@media(max-width:1150px){
+ .hero{grid-template-columns:1fr;align-items:start}.heroActions{justify-content:flex-start}
+ body>.wrap{grid-template-columns:1fr}
+ body>.wrap>section.card:first-of-type{grid-column:1;grid-row:auto;position:static}
+ body>.wrap>#app{grid-column:1;grid-row:auto}
+}
+@media(max-width:780px){
+ .wrap{padding:10px}.hero{padding:17px}.hero h1{font-size:25px}
+ body>.wrap>#app>.grid{grid-template-columns:1fr}
+ body>.wrap>#app>.grid>.full{grid-column:auto}
+ .stats{grid-template-columns:repeat(2,1fr)!important}
+ .gini{padding:13px}.big{font-size:46px}
+}
+@media print{
+ body{background:#fff;color:#172033}.card{background:#fff;color:#172033;border-color:#ddd}
+ .hero{background:#fff;color:#172033;border-color:#ddd}.hero h1,.card h2,.card h3{color:#172033}
+ body>.wrap{display:block}.hero{margin-bottom:14px}.card{margin-bottom:14px}
+ input,select,textarea{background:#fff!important;color:#172033!important}
+}
+
+
+/* ===== TEMA PASTEL / DASHBOARD ACADÉMICO ===== */
+:root{
+ --bg:#f4f7ff;--surface:#ffffff;--surface2:#f8f9ff;--ink:#17245c;--muted:#64719b;
+ --blue:#287cff;--purple:#7650ee;--cyan:#18b8d8;--green:#13b99a;
+ --pink:#ee5a9b;--orange:#f4a629;--red:#ef476f;--line:#dfe6f5;
+ --shadow:0 8px 25px rgba(48,67,125,.10);
+}
+html,body{background:linear-gradient(135deg,#f8f9ff 0%,#eef5ff 48%,#fdf5ff 100%);color:var(--ink)}
+body:before{
+ content:"";position:fixed;inset:0;pointer-events:none;z-index:-1;
+ background:
+ radial-gradient(circle at 2% 0%,rgba(255,190,221,.45),transparent 20%),
+ radial-gradient(circle at 98% 4%,rgba(185,218,255,.5),transparent 24%);
+}
+.wrap{max-width:1540px;padding:14px 16px 36px}
+.hero{
+ grid-column:1/-1!important;
+ display:grid!important;grid-template-columns:1.05fr 1.45fr auto!important;
+ align-items:center!important;gap:20px!important;
+ background:rgba(255,255,255,.88)!important;
+ border:1px solid #dfe6f5!important;border-radius:20px!important;
+ box-shadow:var(--shadow)!important;padding:15px 20px!important;
+ position:relative;overflow:hidden;
+}
+.hero:after{
+ content:"";position:absolute;right:-60px;top:-95px;width:310px;height:250px;
+ background:
+ radial-gradient(ellipse at center,rgba(151,190,255,.42),transparent 58%),
+ linear-gradient(135deg,transparent 45%,rgba(230,219,255,.65) 46%,transparent 70%);
+ border-radius:50%;pointer-events:none;
+}
+.brandMark{background:linear-gradient(135deg,#2778f5,#7750ed)!important;border-radius:13px!important;box-shadow:0 8px 20px rgba(76,91,220,.22)!important}
+.eyebrow{color:#7785ae!important;letter-spacing:2px}
+.hero h1{color:#16265e!important;font-size:28px!important}
+.hero h1 span{color:#315edb!important}
+.hero p{color:#66739a!important}
+.heroInfo{color:#36467d!important}
+.heroInfo small{color:#7783a7!important}
+.heroActions{justify-content:flex-end}
+.heroBtn{border:0!important;border-radius:10px!important;padding:9px 12px!important;box-shadow:0 5px 14px rgba(55,75,160,.13)!important}
+.heroBtn.purple{background:linear-gradient(135deg,#7951ed,#6847df)!important}
+.heroBtn.green{background:linear-gradient(135deg,#18bd9b,#0da98b)!important}
+.heroBtn.blue{background:linear-gradient(135deg,#2788f4,#3475ed)!important}
+
+body>.wrap{display:grid;grid-template-columns:315px minmax(0,1fr);gap:12px}
+body>.wrap>.hero{grid-column:1/-1;grid-row:1}
+body>.wrap>section.card:first-of-type{grid-column:1;grid-row:2 / span 4;align-self:start;position:sticky;top:10px}
+body>.wrap>#app{grid-column:2;grid-row:2}
+body>.wrap>#app>.grid{grid-template-columns:repeat(12,minmax(0,1fr));gap:12px}
+body>.wrap>#app>.grid>.card{grid-column:span 4}
+
+.card{
+ background:rgba(255,255,255,.94)!important;
+ border:1px solid #dfe6f5!important;
+ border-radius:15px!important;
+ box-shadow:var(--shadow)!important;
+ color:var(--ink)!important;
+ padding:15px!important;
+}
+.card h2,.card h3{color:#17265f!important}
+.card p,.help{color:#6b789e!important}
+.sectionHead{gap:10px!important;margin-bottom:13px!important}
+.sectionHead p{color:#7582a5!important}
+.numBadge,.iconBadge{
+ width:35px!important;height:35px!important;flex:0 0 35px!important;
+ border-radius:10px!important;box-shadow:none!important
+}
+.numBadge{background:linear-gradient(135deg,#2d7ff6,#7450ec)!important}
+.blueIcon{background:linear-gradient(135deg,#2582f4,#3474e8)!important}
+.greenIcon{background:linear-gradient(135deg,#16b996,#11a987)!important}
+.purpleIcon{background:linear-gradient(135deg,#7750ee,#9a57ef)!important}
+.pinkIcon{background:linear-gradient(135deg,#ed5798,#f16c9e)!important}
+.cyanIcon{background:linear-gradient(135deg,#16b9d5,#27c9dd)!important}
+.orangeIcon{background:linear-gradient(135deg,#f0a52b,#f6b948)!important}
+
+input,select,textarea{
+ background:#fff!important;color:#243365!important;border:1px solid #d5def1!important;
+ border-radius:8px!important;
+}
+input::placeholder,textarea::placeholder{color:#95a1be!important}
+input:focus,textarea:focus,select:focus{
+ border-color:#7a8ff0!important;box-shadow:0 0 0 3px rgba(93,117,231,.12)!important
+}
+button{border-radius:9px!important}
+.primary{background:linear-gradient(135deg,#2b82f3,#3476eb)!important;color:#fff!important;border:0!important}
+.secondary{background:linear-gradient(135deg,#7950ef,#6547df)!important;color:#fff!important;border:0!important}
+.neutral{background:#f0f3fa!important;color:#4d5d89!important;border:1px solid #dbe2f1!important}
+.danger{background:#fff0f4!important;color:#db3e6d!important;border:1px solid #f2c9d7!important}
+.keypad button{background:#f5f7fc!important;color:#243366!important;border:1px solid #dde4f2!important}
+.keypad button:hover{background:#e9effc!important}
+.registeredTitle{color:#293b72!important}
+.chip{background:#eef5ff!important;border:1px solid #d5e5fb!important;color:#2d64bd!important}
+.chip button{color:#e34f7e!important}
+.gini{
+ background:linear-gradient(145deg,#f2f8ff,#fff)!important;
+ border:1px solid #d7e6f6!important;border-radius:14px!important;
+}
+.big{color:#203fba!important;text-shadow:none!important;font-size:58px!important;font-weight:900}
+.giniPill{
+ background:#ffe8a9!important;color:#755000!important;border:0!important;
+ border-radius:8px!important;font-weight:900!important;
+}
+.stats{gap:8px!important}
+.stat{
+ background:linear-gradient(145deg,#f2f7ff,#fff)!important;
+ border:1px solid #dfe7f4!important;border-radius:9px!important
+}
+.stat span{color:#7180a3!important}.stat strong{color:#22356e!important}
+.track{
+ height:17px!important;border-radius:99px!important;
+ background:linear-gradient(90deg,#18bca6 0 20%,#77ca59 20% 30%,#ffd05a 30% 40%,#ff9a52 40% 50%,#f34f72 50% 100%)!important
+}
+.pin{background:#fff!important;border:3px solid #2849c8!important;box-shadow:0 2px 8px rgba(38,65,180,.22)!important}
+.rangeBox{background:#f9fbff!important;border:1px solid #e1e7f3!important}
+.rangeTitle{color:#354676!important}
+.legend div{color:#53638c!important;border-color:#e0e6f1!important}
+.r1{background:#e6faf6!important}.r2{background:#edf8df!important}.r3{background:#fff6da!important}.r4{background:#fff0df!important}.r5{background:#ffe8ef!important}
+.chart{background:linear-gradient(180deg,#fff,#fbfcff)!important;border:1px solid #dfe7f4!important;border-radius:11px!important}
+.tableWrap{border-color:#dfe6f2!important;border-radius:10px!important}
+table{color:#32426f!important}
+th{background:#eaf1ff!important;color:#294180!important;border-color:#dbe4f2!important}
+td{border-color:#e8edf5!important}
+.step{background:#f4f7ff!important;border-left-color:#7750ee!important;color:#34446f!important}
+.alert{border-radius:9px!important}
+.success{background:#eafaf5!important;color:#16765f!important;border-color:#cceee4!important}
+.warning{background:#fff8e6!important;color:#886219!important;border-color:#f4e1ad!important}
+.error{background:#fff0f4!important;color:#a52e52!important;border-color:#f2cad7!important}
+#status{background:#eafaf6!important;color:#13775f!important;border-color:#cbeee4!important}
+.result{color:#3e4d76!important}
+.tag{background:#eef3ff!important;color:#536ad0!important}
+footer{color:#7581a1!important}
+
+/* Reacomodo del dashboard para parecerse al modelo */
+body>.wrap>#app>.grid>.card:nth-child(1){grid-column:span 4} /* resumen */
+body>.wrap>#app>.grid>.card:nth-child(2){grid-column:span 4} /* gini */
+body>.wrap>#app>.grid>.card:nth-child(3){grid-column:span 4} /* mapa/rango */
+body>.wrap>#app>.grid>.card:nth-child(4){grid-column:span 8} /* lorenz */
+body>.wrap>#app>.grid>.card:nth-child(5){grid-column:span 4} /* relación */
+body>.wrap>#app>.grid>.card:nth-child(6){grid-column:span 12} /* tabla */
+body>.wrap>#app>.grid>.card:nth-child(7){grid-column:span 4} /* procedimiento */
+body>.wrap>#app>.grid>.card:nth-child(8){grid-column:span 4} /* análisis */
+body>.wrap>#app>.grid>.card:nth-child(9){grid-column:span 4} /* conclusión */
+
+@media(max-width:1200px){
+ body>.wrap{grid-template-columns:280px minmax(0,1fr)}
+ body>.wrap>#app>.grid>.card{grid-column:span 6!important}
+ body>.wrap>#app>.grid>.card:nth-child(4),body>.wrap>#app>.grid>.card:nth-child(6){grid-column:1/-1!important}
+}
+@media(max-width:850px){
+ body>.wrap{display:block}
+ body>.wrap>section.card:first-of-type{position:static;margin-bottom:12px}
+ body>.wrap>#app>.grid{display:grid;grid-template-columns:1fr}
+ body>.wrap>#app>.grid>.card{grid-column:1!important}
+ .hero{display:block!important}
+ .heroInfo{margin-top:12px}.heroActions{margin-top:12px;justify-content:flex-start}
+}
+@media print{
+ html,body{background:#fff!important}
+ body>.wrap{display:block}
+ .card,.hero{box-shadow:none!important;background:#fff!important}
+}
+
+
+/* ===== CORRECCIÓN DE DISTRIBUCIÓN: DASHBOARD PASTEL ===== */
+body>.wrap{display:grid!important;grid-template-columns:315px minmax(0,1fr)!important;align-items:start!important;gap:12px!important}
+body>.wrap>.hero{grid-column:1/-1!important;grid-row:1!important}
+body>.wrap>section.card:first-of-type{grid-column:1!important;grid-row:2!important;position:sticky!important;top:10px!important;align-self:start!important}
+body>.wrap>#app{grid-column:2!important;grid-row:2!important;min-width:0!important}
+body>.wrap>#app>.grid{display:grid!important;grid-template-columns:repeat(12,minmax(0,1fr))!important;gap:12px!important;align-items:start!important}
+body>.wrap>#app>.grid>.dashboard-summary{grid-column:span 4!important}
+body>.wrap>#app>.grid>.dashboard-gini{grid-column:span 4!important}
+body>.wrap>#app>.grid>.dashboard-lorenz{grid-column:span 8!important;grid-row:2!important}
+body>.wrap>#app>.grid>.dashboard-relation{grid-column:span 4!important;grid-row:2!important}
+body>.wrap>#app>.grid>.dashboard-table{grid-column:1/-1!important;grid-row:3!important}
+body>.wrap>#app>.grid>.dashboard-procedure{grid-column:span 4!important;grid-row:4!important}
+body>.wrap>#app>.grid>.dashboard-analysis{grid-column:span 4!important;grid-row:4!important}
+body>.wrap>#app>.grid>.dashboard-conclusion{grid-column:span 4!important;grid-row:4!important}
+.data-context-grid{display:grid!important;grid-template-columns:1fr!important;gap:10px!important}
+.data-entry-grid{display:grid!important;grid-template-columns:1fr!important;gap:14px!important}
+body>.wrap>section.card .grid{min-width:0}
+body>.wrap>section.card{min-width:0}
+body>.wrap>#app .card{min-width:0;overflow:hidden}
+body>.wrap>#app .chart{width:100%;overflow:hidden}
+body>.wrap>#app canvas{max-width:100%}
+@media(max-width:1200px){
+ body>.wrap{grid-template-columns:280px minmax(0,1fr)!important}
+ body>.wrap>#app>.grid>.dashboard-summary,
+ body>.wrap>#app>.grid>.dashboard-gini,
+ body>.wrap>#app>.grid>.dashboard-lorenz,
+ body>.wrap>#app>.grid>.dashboard-relation,
+ body>.wrap>#app>.grid>.dashboard-procedure,
+ body>.wrap>#app>.grid>.dashboard-analysis,
+ body>.wrap>#app>.grid>.dashboard-conclusion{grid-column:span 6!important}
+ body>.wrap>#app>.grid>.dashboard-table{grid-column:1/-1!important}
+ body>.wrap>#app>.grid>.dashboard-lorenz{grid-row:auto!important}
+ body>.wrap>#app>.grid>.dashboard-relation{grid-row:auto!important}
+}
+@media(max-width:850px){
+ body>.wrap{display:block!important}
+ body>.wrap>section.card:first-of-type{position:static!important;margin-bottom:12px!important}
+ body>.wrap>#app{width:100%!important}
+ body>.wrap>#app>.grid{display:grid!important;grid-template-columns:1fr!important}
+ body>.wrap>#app>.grid>.dashboard-summary,
+ body>.wrap>#app>.grid>.dashboard-gini,
+ body>.wrap>#app>.grid>.dashboard-lorenz,
+ body>.wrap>#app>.grid>.dashboard-relation,
+ body>.wrap>#app>.grid>.dashboard-table,
+ body>.wrap>#app>.grid>.dashboard-procedure,
+ body>.wrap>#app>.grid>.dashboard-analysis,
+ body>.wrap>#app>.grid>.dashboard-conclusion{grid-column:1!important;grid-row:auto!important}
+}
+
+
+/* ===== DISTRIBUCIÓN FINAL DE ESPACIOS ===== */
+*{box-sizing:border-box}
+html,body{min-width:0}
+body{overflow-x:hidden}
+.wrap{
+  width:min(1500px,100%);
+  margin:0 auto;
+  padding:18px 20px 42px;
+  display:grid!important;
+  grid-template-columns:300px minmax(0,1fr)!important;
+  grid-template-rows:auto auto!important;
+  column-gap:18px!important;
+  row-gap:18px!important;
+  align-items:start;
+}
+.hero{
+  grid-column:1/-1!important;
+  grid-row:1!important;
+  min-height:128px;
+}
+body>.wrap>section.card:first-of-type{
+  grid-column:1!important;
+  grid-row:2!important;
+  width:100%;
+  position:sticky!important;
+  top:16px!important;
+  align-self:start!important;
+  margin:0!important;
+}
+body>.wrap>#app{
+  grid-column:2!important;
+  grid-row:2!important;
+  width:100%;
+  min-width:0;
+}
+body>.wrap>#app>.grid{
+  display:grid!important;
+  grid-template-columns:repeat(12,minmax(0,1fr))!important;
+  gap:16px!important;
+  width:100%;
+  align-items:start;
+}
+body>.wrap>#app>.grid>.card{
+  min-width:0;
+  width:100%;
+  margin:0!important;
+}
+
+/* Fila 1: resumen + Gini */
+body>.wrap>#app>.grid>.dashboard-summary{
+  grid-column:span 5!important;
+  grid-row:auto!important;
+}
+body>.wrap>#app>.grid>.dashboard-gini{
+  grid-column:span 7!important;
+  grid-row:auto!important;
+}
+
+/* Fila 2: curva grande + relación */
+body>.wrap>#app>.grid>.dashboard-lorenz{
+  grid-column:span 8!important;
+  grid-row:auto!important;
+}
+body>.wrap>#app>.grid>.dashboard-relation{
+  grid-column:span 4!important;
+  grid-row:auto!important;
+}
+
+/* Fila 3: tabla completa */
+body>.wrap>#app>.grid>.dashboard-table{
+  grid-column:1/-1!important;
+  grid-row:auto!important;
+}
+
+/* Fila 4: procedimiento + análisis */
+body>.wrap>#app>.grid>.dashboard-procedure{
+  grid-column:span 6!important;
+  grid-row:auto!important;
+}
+body>.wrap>#app>.grid>.dashboard-analysis{
+  grid-column:span 6!important;
+  grid-row:auto!important;
+}
+
+/* Fila 5: conclusión + herramientas */
+body>.wrap>#app>.grid>.dashboard-conclusion{
+  grid-column:span 8!important;
+  grid-row:auto!important;
+}
+body>.wrap>#app>.grid>.noPrint{
+  grid-column:span 4!important;
+  grid-row:auto!important;
+}
+
+/* Mejor aprovechamiento interno */
+.dashboard-summary .stats{
+  grid-template-columns:repeat(3,minmax(0,1fr))!important;
+}
+.dashboard-gini .gini{
+  display:grid;
+  grid-template-columns:minmax(150px,.65fr) minmax(260px,1.35fr);
+  align-items:center;
+  gap:20px;
+}
+.dashboard-gini .giniMain{text-align:left}
+.dashboard-gini .stats{
+  grid-template-columns:repeat(3,minmax(0,1fr))!important;
+}
+.dashboard-gini .rangeBox{margin-top:14px}
+.dashboard-lorenz .chart{
+  width:100%;
+  min-height:360px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:8px;
+}
+.dashboard-lorenz canvas{
+  width:100%!important;
+  height:340px!important;
+  max-width:100%;
+}
+.dashboard-relation .success{
+  min-height:360px;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  padding:22px!important;
+  line-height:1.8;
+}
+.dashboard-table .tableWrap{
+  max-height:390px;
+  overflow:auto;
+}
+.dashboard-procedure,.dashboard-analysis{
+  min-height:310px;
+}
+.dashboard-conclusion{
+  min-height:220px;
+}
+.dashboard-conclusion .result{
+  line-height:1.75;
+}
+body>.wrap>section.card:first-of-type{
+  padding:18px!important;
+}
+body>.wrap>section.card:first-of-type .sectionHead{
+  margin-bottom:16px!important;
+}
+body>.wrap>section.card:first-of-type textarea{
+  min-height:150px!important;
+}
+body>.wrap>section.card:first-of-type .keypad{
+  margin-top:8px;
+}
+body>.wrap>section.card:first-of-type .actions{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:8px;
+}
+body>.wrap>section.card:first-of-type .actions button:first-child{
+  grid-column:1/-1;
+}
+.heroActions{max-width:420px}
+.miniNav{
+  position:absolute;
+  right:20px;
+  top:10px;
+  display:flex;
+  gap:12px;
+  color:#7886aa;
+  font-size:10px;
+  z-index:2;
+}
+.miniNav span{padding:3px 0}
+.miniNav .active{color:#315edb;font-weight:800}
+@media(max-width:1250px){
+  .wrap{
+    grid-template-columns:270px minmax(0,1fr)!important;
+    column-gap:14px!important;
+  }
+  .hero{
+    grid-template-columns:1fr 1fr!important;
+  }
+  .heroActions{grid-column:1/-1;justify-content:flex-start}
+}
+@media(max-width:980px){
+  .wrap{
+    display:block!important;
+    padding:12px!important;
+  }
+  .hero{
+    display:block!important;
+    margin-bottom:14px;
+  }
+  .heroInfo{margin-top:12px}
+  .heroActions{margin-top:12px}
+  .miniNav{display:none}
+  body>.wrap>section.card:first-of-type{
+    position:static!important;
+    margin-bottom:14px!important;
+  }
+  body>.wrap>#app>.grid{
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    gap:12px!important;
+  }
+  body>.wrap>#app>.grid>.dashboard-summary,
+  body>.wrap>#app>.grid>.dashboard-gini,
+  body>.wrap>#app>.grid>.dashboard-lorenz,
+  body>.wrap>#app>.grid>.dashboard-relation,
+  body>.wrap>#app>.grid>.dashboard-procedure,
+  body>.wrap>#app>.grid>.dashboard-analysis{
+    grid-column:1/-1!important;
+  }
+  .dashboard-gini .gini{
+    grid-template-columns:1fr;
+  }
+  .dashboard-lorenz .chart{min-height:300px}
+  .dashboard-lorenz canvas{height:280px!important}
+  .dashboard-relation .success{min-height:0}
+}
+@media(max-width:600px){
+  .wrap{padding:8px!important}
+  .hero{padding:15px!important}
+  .hero h1{font-size:24px!important}
+  body>.wrap>#app>.grid{display:block!important}
+  body>.wrap>#app>.grid>.card{margin-bottom:12px!important}
+  .dashboard-summary .stats,
+  .dashboard-gini .stats{grid-template-columns:1fr 1fr!important}
+  .dashboard-lorenz .chart{min-height:250px;padding:4px}
+  .dashboard-lorenz canvas{height:235px!important}
+}
+
+
+/* ===== CORRECCIÓN DE SUPERPOSICIONES Y TEXTO ===== */
+body{font-size:14px}
+body>.wrap>#app>.grid{align-items:stretch!important}
+
+/* Cada tarjeta mantiene su contenido dentro de sus propios límites */
+body>.wrap>#app>.grid>.card{
+  overflow:hidden!important;
+  min-width:0!important;
+}
+.sectionHead>div:last-child{min-width:0}
+.sectionHead h2{
+  line-height:1.18!important;
+  overflow-wrap:anywhere;
+}
+.sectionHead p{
+  line-height:1.4!important;
+  overflow-wrap:anywhere;
+}
+
+/* Resumen: tarjetas más respiradas */
+.dashboard-summary .stats{
+  display:grid!important;
+  grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  gap:10px!important;
+}
+.dashboard-summary .stat{
+  min-width:0!important;
+  min-height:92px;
+  padding:13px 12px!important;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+}
+.stat span{
+  display:block!important;
+  line-height:1.25!important;
+  overflow-wrap:anywhere;
+}
+.stat strong{
+  display:block!important;
+  margin-top:4px;
+  line-height:1.15!important;
+  font-size:20px!important;
+  overflow-wrap:anywhere!important;
+  word-break:break-word!important;
+}
+
+/* Gini: nunca poner el número y la escala encima uno del otro */
+.dashboard-gini .gini{
+  display:block!important;
+  padding:18px!important;
+  min-width:0!important;
+}
+.dashboard-gini .giniMain{
+  width:100%!important;
+  min-width:0!important;
+}
+.dashboard-gini .big{
+  display:block!important;
+  font-size:clamp(42px,4vw,58px)!important;
+  line-height:1.05!important;
+  letter-spacing:-1px!important;
+  white-space:nowrap!important;
+  overflow:hidden!important;
+  text-overflow:clip!important;
+  margin-top:3px;
+}
+.dashboard-gini .giniPill{
+  max-width:100%;
+  white-space:normal!important;
+  line-height:1.2!important;
+}
+.dashboard-gini .scale{
+  width:100%!important;
+  min-width:0!important;
+  margin-top:18px!important;
+}
+.dashboard-gini .track{
+  width:100%!important;
+  position:relative;
+}
+.dashboard-gini .scaleLabels{
+  width:100%!important;
+  display:flex!important;
+  justify-content:space-between!important;
+  gap:4px!important;
+}
+.dashboard-gini .scaleLabels span{
+  white-space:nowrap!important;
+  font-size:11px!important;
+}
+.dashboard-gini>.stats{
+  display:grid!important;
+  grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  gap:10px!important;
+}
+.dashboard-gini>.stats .stat{
+  min-width:0!important;
+  min-height:74px;
+  padding:11px!important;
+}
+.dashboard-gini>.stats .stat strong{
+  font-size:19px!important;
+}
+
+/* Mapa/rangos: texto dentro de sus cajas */
+.dashboard-gini .rangeBox{
+  padding:15px!important;
+  overflow:hidden!important;
+}
+.dashboard-gini .rangeTitle{
+  line-height:1.35!important;
+  overflow-wrap:anywhere!important;
+}
+.dashboard-gini #rangeDesc{
+  line-height:1.45!important;
+  overflow-wrap:anywhere!important;
+}
+.dashboard-gini .legend{
+  display:grid!important;
+  grid-template-columns:repeat(5,minmax(0,1fr))!important;
+  gap:7px!important;
+}
+.dashboard-gini .legend>div{
+  min-width:0!important;
+  min-height:58px;
+  padding:8px 5px!important;
+  border-radius:9px!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  text-align:center!important;
+  line-height:1.25!important;
+  overflow-wrap:anywhere!important;
+}
+
+/* Curva: reserva espacio real para la gráfica */
+.dashboard-lorenz .chart{
+  width:100%!important;
+  min-width:0!important;
+  min-height:380px!important;
+  height:380px!important;
+  padding:12px!important;
+  overflow:hidden!important;
+}
+.dashboard-lorenz canvas{
+  display:block!important;
+  width:100%!important;
+  height:350px!important;
+  max-width:100%!important;
+}
+.dashboard-lorenz .alert{
+  margin-bottom:12px!important;
+  line-height:1.45!important;
+  overflow-wrap:anywhere!important;
+}
+.dashboard-lorenz .result{
+  line-height:1.55!important;
+  overflow-wrap:anywhere!important;
+}
+
+/* Relación: no dejar que el texto se salga */
+.dashboard-relation .success{
+  min-height:0!important;
+  height:auto!important;
+  padding:20px!important;
+  line-height:1.75!important;
+  overflow-wrap:anywhere!important;
+  word-break:normal!important;
+}
+
+/* Tabla */
+.dashboard-table .tableWrap{
+  width:100%!important;
+  max-width:100%!important;
+  overflow-x:auto!important;
+}
+.dashboard-table table{
+  width:100%!important;
+  min-width:760px;
+}
+.dashboard-table th,.dashboard-table td{
+  white-space:normal!important;
+  overflow-wrap:anywhere!important;
+}
+
+/* Procedimiento/análisis */
+.dashboard-procedure,.dashboard-analysis,.dashboard-conclusion{
+  overflow:hidden!important;
+}
+.dashboard-procedure .step,.dashboard-analysis .result,.dashboard-conclusion .result{
+  line-height:1.65!important;
+  overflow-wrap:anywhere!important;
+}
+
+/* Panel izquierdo */
+body>.wrap>section.card:first-of-type{
+  min-width:0!important;
+  overflow:hidden!important;
+}
+body>.wrap>section.card:first-of-type input,
+body>.wrap>section.card:first-of-type textarea,
+body>.wrap>section.card:first-of-type select{
+  width:100%!important;
+  max-width:100%!important;
+}
+body>.wrap>section.card:first-of-type .keypad{
+  display:grid!important;
+  grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  gap:8px!important;
+}
+body>.wrap>section.card:first-of-type .keypad button{
+  min-width:0!important;
+}
+body>.wrap>section.card:first-of-type .actions{
+  display:grid!important;
+  grid-template-columns:1fr 1fr!important;
+  gap:8px!important;
+}
+body>.wrap>section.card:first-of-type .actions>*{
+  min-width:0!important;
+  width:100%!important;
+}
+body>.wrap>section.card:first-of-type .actions button:first-child{
+  grid-column:1/-1!important;
+}
+
+/* Ajustes para el ancho que aparece en tu captura */
+@media(min-width:1201px){
+  body>.wrap{
+    grid-template-columns:310px minmax(0,1fr)!important;
+    column-gap:18px!important;
+  }
+  body>.wrap>#app>.grid{
+    grid-template-columns:repeat(12,minmax(0,1fr))!important;
+    gap:16px!important;
+  }
+  .dashboard-summary{grid-column:span 5!important}
+  .dashboard-gini{grid-column:span 7!important}
+  .dashboard-lorenz{grid-column:span 8!important}
+  .dashboard-relation{grid-column:span 4!important}
+  .dashboard-table{grid-column:1/-1!important}
+  .dashboard-procedure{grid-column:span 6!important}
+  .dashboard-analysis{grid-column:span 6!important}
+  .dashboard-conclusion{grid-column:span 8!important}
+}
+
+/* Cuando el ancho no alcanza, las tarjetas pasan a filas completas */
+@media(max-width:1200px) and (min-width:851px){
+  body>.wrap{
+    grid-template-columns:270px minmax(0,1fr)!important;
+  }
+  .dashboard-summary,.dashboard-gini,
+  .dashboard-lorenz,.dashboard-relation,
+  .dashboard-procedure,.dashboard-analysis,
+  .dashboard-conclusion{
+    grid-column:1/-1!important;
+  }
+  .dashboard-gini .gini{
+    display:grid!important;
+    grid-template-columns:minmax(0,1fr) minmax(260px,1fr)!important;
+    gap:18px!important;
+  }
+  .dashboard-gini .scale{margin-top:0!important}
+}
+
+@media(max-width:850px){
+  body>.wrap>#app>.grid{
+    display:block!important;
+  }
+  body>.wrap>#app>.grid>.card{
+    width:100%!important;
+    margin-bottom:14px!important;
+  }
+  .dashboard-gini .gini{
+    display:block!important;
+  }
+  .dashboard-gini .scale{
+    margin-top:18px!important;
+  }
+  .dashboard-gini .legend{
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  }
+}
+@media(max-width:600px){
+  .dashboard-summary .stats,
+  .dashboard-gini>.stats{
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  }
+  .dashboard-gini .legend{
+    grid-template-columns:1fr 1fr!important;
+  }
+  .dashboard-gini .big{
+    font-size:46px!important;
+  }
+  .dashboard-lorenz .chart{
+    min-height:280px!important;
+    height:280px!important;
+  }
+  .dashboard-lorenz canvas{
+    height:250px!important;
+  }
+}
+
+
+/* ===== RESUMEN: 2 COLUMNAS x 3 FILAS ===== */
+.dashboard-summary{
+  grid-column:span 5!important;
+  min-height:0!important;
+}
+.dashboard-gini{
+  grid-column:span 7!important;
+}
+.dashboard-summary .stats{
+  display:grid!important;
+  grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  grid-template-rows:repeat(3,minmax(92px,auto))!important;
+  gap:12px!important;
+  align-items:stretch!important;
+}
+.dashboard-summary .stat{
+  min-width:0!important;
+  min-height:92px!important;
+  padding:16px 17px!important;
+  display:flex!important;
+  flex-direction:column!important;
+  justify-content:center!important;
+  overflow:hidden!important;
+}
+.dashboard-summary .stat span{
+  display:block!important;
+  font-size:14px!important;
+  line-height:1.25!important;
+  margin-bottom:6px!important;
+  white-space:normal!important;
+  overflow-wrap:normal!important;
+  word-break:normal!important;
+}
+.dashboard-summary .stat strong{
+  display:block!important;
+  font-size:22px!important;
+  line-height:1.12!important;
+  white-space:nowrap!important;
+  overflow:hidden!important;
+  text-overflow:clip!important;
+  letter-spacing:-.25px!important;
+}
+.dashboard-summary .sectionHead{
+  margin-bottom:14px!important;
+}
+.dashboard-summary .sectionHead h2{
+  max-width:100%!important;
+  line-height:1.12!important;
+}
+@media(max-width:1200px){
+  .dashboard-summary{grid-column:span 6!important}
+  .dashboard-gini{grid-column:span 6!important}
+  .dashboard-summary .stat strong{font-size:20px!important}
+}
+@media(max-width:900px){
+  .dashboard-summary{grid-column:1/-1!important}
+  .dashboard-gini{grid-column:1/-1!important}
+}
+@media(max-width:520px){
+  .dashboard-summary .stats{
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    grid-template-rows:repeat(3,minmax(88px,auto))!important;
+    gap:9px!important;
+  }
+  .dashboard-summary .stat{padding:13px!important;min-height:88px!important}
+  .dashboard-summary .stat strong{font-size:18px!important}
+}
+
+</style>
+</head>
+<body>
+<div class="wrap">
+<header class="hero">
+<div class="brandRow">
+  <div class="brandMark">▥</div>
+  <div>
+    <div class="eyebrow">ANÁLISIS ESTADÍSTICO · LORENZ SERIES</div>
+    <h1>GINI <span>ECONÓMICO</span></h1>
+    <p>Calculadora de Desigualdad de Ingresos</p>
+  </div>
+</div>
+
+<nav class="miniNav noPrint">
+  <span class="active">⌂ Inicio</span>
+  <span>▥ Análisis</span>
+  <span>▦ Tabla</span>
+  <span>⚙ Procedimiento</span>
+  <span>▣ Informe</span>
+  <span>?</span>
+</nav>
+<div class="heroInfo">
+  <strong>Coeficiente de Gini</strong><span>•</span><strong>Curva de Lorenz</strong><span>•</span><strong>Análisis de distribución</strong>
+  <small>Analiza la desigualdad económica a partir de los ingresos mensuales de personas u hogares.</small>
+</div>
+<div class="heroActions noPrint">
+  <button class="heroBtn purple" onclick="example()">▣ Cargar ejemplo</button>
+  <button class="heroBtn green" onclick="downloadReport()">⇩ Descargar informe</button>
+  <button class="heroBtn blue" onclick="window.print()">▣ Imprimir / PDF</button>
+</div>
+</header>
+
+<section class="card">
+<div class="sectionHead"><div class="numBadge">1</div><div><h2>Datos del análisis</h2><p>Ingresa el contexto y los ingresos que deseas analizar.</p></div></div>
+<div class="grid data-context-grid" style="margin-bottom:14px">
+<div><label class="help"><strong>País / contexto</strong></label>
+<input id="country" value="Colombia" placeholder="Ej. Colombia" style="width:100%;border:2px solid var(--border);border-radius:12px;padding:12px;font-size:15px"></div>
+<div><label class="help"><strong>Moneda</strong></label>
+<select id="currency" style="width:100%;border:2px solid var(--border);border-radius:12px;padding:12px;font-size:15px">
+<option value="COP">Peso colombiano (COP)</option><option value="USD">Dólar estadounidense (USD)</option><option value="EUR">Euro (EUR)</option>
+</select></div></div>
+<div class="grid data-entry-grid">
+<div>
+<h3 style="margin:0 0 8px;font-size:15px">Ingreso individual</h3>
+<input id="singleInput" inputmode="decimal" placeholder="Ej. 3500000" style="width:100%;border:2px solid var(--border);border-radius:12px;padding:12px;font-size:16px">
+<div id="keypad" class="keypad">
+<button onclick="key('7')">7</button><button onclick="key('8')">8</button><button onclick="key('9')">9</button>
+<button onclick="key('4')">4</button><button onclick="key('5')">5</button><button onclick="key('6')">6</button>
+<button onclick="key('1')">1</button><button onclick="key('2')">2</button><button onclick="key('3')">3</button>
+<button class="wide" onclick="key('0')">0</button><button onclick="key('back')">⌫</button></div>
+<button class="primary" style="width:100%;margin-top:8px" onclick="addSingle()">Ingresar ingreso</button>
+</div>
+<div>
+<h3 style="margin:0 0 8px;font-size:15px">Copiar y pegar varios ingresos</h3>
+<p class="help" style="margin-top:0">Pega datos desde Excel, Word o Google Sheets. Se reconocen comas, punto y coma, espacios, saltos de línea y tabulaciones.</p>
+
+<p class="help"><strong>Ingrese los ingresos mensuales de las personas u hogares.</strong> Puede escribirlos o pegarlos desde Excel, Word o Google Sheets. Se reconocen comas, punto y coma, espacios, saltos de línea y tabulaciones.</p>
+<textarea id="input" placeholder="Ejemplo: 1300000, 1500000, 1800000, 2200000..."></textarea>
+</div></div>
+<div class="actions noPrint">
+<button class="primary" onclick="calc()">Calcular Gini</button>
+<button class="secondary" onclick="example()">Cargar ejemplo de ingresos</button>
+<button class="neutral" onclick="clearAll()">Limpiar datos</button>
+<label class="neutral" style="display:inline-flex;align-items:center;cursor:pointer">📁 Cargar CSV
+<input id="csvFile" type="file" accept=".csv,text/csv" style="display:none" onchange="loadCSV(event)">
+</label>
+</div>
+<div class="registeredTitle">Ingresos registrados <span id="registeredCount"></span></div><div id="chips" class="chips"></div>
+<div id="validation"></div>
+</section>
+
+<div id="app" class="hidden">
+<div class="grid">
+<section class="card full dashboard-summary"><div class="sectionHead compact"><div class="iconBadge blueIcon">▥</div><div><h2>Resumen de los ingresos analizados</h2><p>Indicadores descriptivos del conjunto seleccionado.</p></div></div><div class="stats" id="stats"></div></section>
+
+<section class="card full dashboard-gini">
+<div class="sectionHead compact"><div class="iconBadge greenIcon">◔</div><div><h2>Coeficiente de Gini</h2><p>Indicador de desigualdad de la distribución.</p></div></div>
+<div class="gini"><div class="giniMain"><span class="help">COEFICIENTE DE GINI</span><div class="big" id="gini">—</div><div class="giniPill" id="giniPill">ESPERANDO DATOS</div></div>
+<div class="scale"><div class="track"><div class="pin" id="pin"></div></div><div class="scaleLabels"><span>0,00</span><span>0,20</span><span>0,40</span><span>0,60</span><span>0,80</span><span>1,00</span></div></div></div>
+<div class="stats" style="grid-template-columns:repeat(3,1fr);margin-top:16px">
+<div class="stat"><span>Área A</span><strong id="areaA">—</strong></div>
+<div class="stat"><span>Área B</span><strong id="areaB">—</strong></div>
+<div class="stat"><span>A + B</span><strong id="areaSum">—</strong></div>
+</div>
+<div class="rangeBox"><div class="rangeTitle" id="rangeTitle"></div><div class="help" id="rangeDesc"></div>
+<div class="legend"><div class="r1">0,00–0,20<br>Muy baja*</div><div class="r2">0,20–0,30<br>Baja*</div><div class="r3">0,30–0,40<br>Moderada*</div><div class="r4">0,40–0,50<br>Alta*</div><div class="r5">0,50–1,00<br>Muy alta*</div></div>
+<p class="help">* Rangos orientativos para fines didácticos; no constituyen una clasificación universal.</p></div>
+<div id="giniText" class="result"></div>
+</section>
+
+<section class="card full dashboard-lorenz">
+<div class="sectionHead compact"><div class="iconBadge purpleIcon">⌁</div><div><h2>Curva de Lorenz</h2><p>Representación gráfica de la distribución acumulada.</p></div></div><div class="alert success" id="status">> ESPERANDO DATOS...</div>
+<div class="chart"><canvas id="canvas"></canvas></div>
+<div id="lorenzText" class="result" style="margin-top:14px"></div>
+</section>
+
+<section class="card full dashboard-relation">
+<div class="sectionHead compact"><div class="iconBadge pinkIcon">↔</div><div><h2>Relación entre Gini y Curva de Lorenz</h2><p>Cómo se relacionan la curva, las áreas y el indicador.</p></div></div>
+<div class="success result"><strong>Mayor separación</strong> entre la Curva de Lorenz y la línea de igualdad perfecta → mayor desigualdad → Gini más alto.<br><strong>Menor separación</strong> → distribución más cercana a la igualdad → Gini más bajo.</div>
+</section>
+
+<section class="card full dashboard-table">
+<div class="sectionHead compact"><div class="iconBadge cyanIcon">▦</div><div><h2>Tabla de distribución acumulada</h2><p>Datos utilizados para construir la Curva de Lorenz.</p></div></div>
+<div class="tableWrap"><table id="table"></table></div>
+</section>
+
+<section class="card dashboard-procedure"><div class="sectionHead compact"><div class="iconBadge blueIcon">⚙</div><div><h2>Procedimiento paso a paso</h2><p>Desarrollo matemático del cálculo.</p></div></div><div id="procedure"></div></section>
+<section class="card dashboard-analysis"><div class="sectionHead compact"><div class="iconBadge orangeIcon">▥</div><div><h2>Análisis de la desigualdad económica</h2><p>Interpretación automática de los resultados.</p></div></div><div id="analysis" class="result"></div></section>
+<section class="card full dashboard-conclusion"><div class="sectionHead compact"><div class="iconBadge pinkIcon">●</div><div><h2>Conclusión</h2><p>Síntesis de los principales hallazgos.</p></div></div><div id="conclusion" class="result"></div></section>
+
+<section class="card noPrint"><h2>Herramientas</h2><div class="actions">
+<button class="secondary" onclick="copyResult()">Copiar resultado</button>
+<button class="primary" onclick="downloadReport()">Descargar informe</button>
+<button class="neutral" onclick="window.print()">Imprimir / Guardar PDF</button>
+</div></section>
+</div>
+</div>
+</div>
+
+<script>
+let D=null, manualValues=[];
+const $=id=>document.getElementById(id);
+function money(x){const c=document.getElementById('currency')?.value||'COP';return new Intl.NumberFormat('es-CO',{style:'currency',currency:c,maximumFractionDigits:0}).format(x)}
+function num(x,d=4){return Number(x).toLocaleString('es-CO',{minimumFractionDigits:d,maximumFractionDigits:d})}
+function pct(x,d=1){return (x*100).toLocaleString('es-CO',{minimumFractionDigits:d,maximumFractionDigits:d})+'%'}
+function esc(s){return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
+
+function parse(raw){
+ let s=raw.replace(/\u00a0/g,' ').trim(); if(!s)return {v:[],bad:[]};
+ // Handles thousands separators with periods (1.300.000) and list separators.
+ // For comma lists, commas separate observations. A decimal comma is accepted only when unambiguous.
+ let chunks=s.split(/[;\n\r\t]+/).flatMap(x=>x.includes(',')?x.split(','):[x]);
+ if(chunks.length===1 && /\s+/.test(chunks[0])) chunks=chunks[0].split(/\s+/);
+ let v=[],bad=[];
+ for(let t of chunks){t=t.trim();if(!t)continue;
+   let z=t.replace(/[^\d.,\-+eE]/g,'');
+   // Colombian thousands: 1.300.000 -> 1300000
+   if(/^-?\d{1,3}(\.\d{3})+$/.test(z)) z=z.replace(/\./g,'');
+   else if(/^-?\d{1,3}(,\d{3})+$/.test(z)) z=z.replace(/,/g,'');
+   else if(/^-?\d+,\d+$/.test(z)) z=z.replace(',','.');
+   else z=z.replace(/,/g,'');
+   let n=Number(z);
+   if(Number.isFinite(n))v.push(n);else bad.push(t);
+ }
+ return {v,bad};
+}
+function median(a){let s=[...a].sort((a,b)=>a-b),n=s.length;return n%2?s[(n-1)/2]:(s[n/2-1]+s[n/2])/2}
+
+function key(k){
+ const el=$('singleInput');
+ if(k==='back') el.value=el.value.slice(0,-1); else el.value+=k;
+ el.focus();
+}
+function addSingle(){
+ const raw=$('singleInput').value.trim(); if(!raw)return;
+ const p=parse(raw);
+ if(p.v.length!==1 || p.bad.length){
+   $('validation').innerHTML='<div class="alert error">Escribe un solo ingreso numérico válido.</div>'; return;
+ }
+ manualValues.push(p.v[0]); $('singleInput').value=''; renderChips(); rebuildInput(); calc();
+}
+function renderChips(){
+ $('chips').innerHTML=manualValues.length
+ ? manualValues.map((v,i)=>'<span class="chip">'+money(v)+' <button onclick="removeSingle('+i+')">×</button></span>').join('')
+ : '';
+if($('registeredCount')) $('registeredCount').textContent=manualValues.length ? '('+manualValues.length+')' : '';
+}
+function removeSingle(i){manualValues.splice(i,1);renderChips();rebuildInput();if(manualValues.length)calc();else $('app').classList.add('hidden');}
+function rebuildInput(){$('input').value=manualValues.length?manualValues.join(', '):$('input').value;}
+function loadCSV(e){
+ const f=e.target.files&&e.target.files[0]; if(!f)return;
+ const reader=new FileReader(); reader.onload=()=>{$('input').value=reader.result;calc();}; reader.readAsText(f);
+}
+
+function calc(){
+ let p=parse($('input').value),v=p.v, val=$('validation');val.innerHTML='';
+ if(p.bad.length)val.innerHTML=`<div class="alert error"><strong>Valores no reconocidos:</strong> ${p.bad.slice(0,12).map(esc).join(', ')}${p.bad.length>12?'…':''}. Corrígelos antes de calcular.</div>`;
+ if(v.length<2){val.innerHTML+=`<div class="alert error">Ingresa al menos dos ingresos válidos.</div>`;$('app').classList.add('hidden');return}
+ if(v.some(x=>x<0))val.innerHTML+=`<div class="alert warning">Hay ingresos negativos. Verifica que sean apropiados para el contexto, porque la interpretación habitual del Gini de ingresos se realiza con variables no negativas.</div>`;
+ let s=[...v].sort((a,b)=>a-b),n=s.length,total=s.reduce((a,b)=>a+b,0),mean=total/n,med=median(s);
+ if(total<=0){val.innerHTML+=`<div class="alert error">El ingreso total debe ser mayor que cero para calcular este Gini.</div>`;$('app').classList.add('hidden');return}
+ let weighted=0;s.forEach((x,i)=>weighted+=(2*(i+1)-n-1)*x);
+ let g=Math.max(0,Math.min(1,weighted/(n*total))),cum=0;
+ let rows=s.map((x,i)=>{cum+=x;return {i:i+1,x,cum,px:(i+1)/n,py:cum/total}});
+ let areaB=0,prevX=0,prevY=0;
+ rows.forEach(q=>{areaB+=(q.px-prevX)*(q.py+prevY)/2;prevX=q.px;prevY=q.py;});
+ let areaA=Math.max(0,0.5-areaB),areaSum=areaA+areaB;
+
+ D={v,s,n,total,mean,med,min:s[0],max:s[n-1],g,rows,areaA,areaB,areaSum};$('app').classList.remove('hidden');
+ $('stats').innerHTML=[['Personas/hogares',n],['Ingreso mínimo',money(s[0])],['Ingreso máximo',money(s[n-1])],['Ingreso promedio',money(mean)],['Mediana',money(med)],['Ingreso total',money(total)]].map(x=>`<div class="stat"><span>${x[0]}</span><strong>${x[1]}</strong></div>`).join('');
+ $('gini').textContent=num(g);$('pin').style.left=(g*100)+'%';
+$('areaA').textContent=num(areaA);$('areaB').textContent=num(areaB);$('areaSum').textContent=num(areaSum);
+const country=($('country').value||'Sin especificar').trim();
+$('status').innerHTML='<strong>● CALCULADO</strong> &nbsp;—&nbsp; '+esc(country)+' &nbsp;—&nbsp; '+n+' datos válidos';
+ let R=g<.2?['Desigualdad muy baja','La distribución está relativamente cercana a la igualdad dentro de esta guía orientativa.']:g<.3?['Desigualdad baja','Se observan diferencias relativamente pequeñas entre los ingresos.']:g<.4?['Desigualdad moderada','La distribución presenta diferencias apreciables entre los ingresos.']:g<.5?['Desigualdad alta','La distribución muestra diferencias importantes entre los ingresos.']:['Desigualdad muy alta','La distribución presenta una concentración marcada de los ingresos.'];
+ $('giniPill').textContent=R[0].toUpperCase();
+ $('rangeTitle').innerHTML=`Rango identificado: <span class="tag">${R[0]}</span>`;$('rangeDesc').textContent=R[1];
+ $('giniText').innerHTML=`<p><strong>${esc(country)}</strong>: el Coeficiente de Gini obtenido es <strong>${num(g)}</strong>. El indicador resume las diferencias relativas entre los ingresos: 0 representa igualdad perfecta y valores cercanos a 1 representan mayor desigualdad. El resultado debe interpretarse junto con el contexto, la media, la mediana y la Curva de Lorenz.</p>`;
+ let mid=rows[Math.ceil(n*.5)-1],top20=rows[Math.ceil(n*.8)-1];
+ $('lorenzText').innerHTML=`<p><strong>Área A:</strong> ${num(areaA)} &nbsp; | &nbsp; <strong>Área B:</strong> ${num(areaB)} &nbsp; | &nbsp; <strong>A+B:</strong> ${num(areaSum)}</p><p>La diagonal representa la igualdad perfecta. La Curva de Lorenz muestra la proporción acumulada del ingreso que corresponde a una proporción acumulada de personas u hogares. En estos datos, el <strong>50% inferior</strong> acumula aproximadamente <strong>${pct(mid.py)}</strong> del ingreso total.</p>`;
+ $('table').innerHTML='<thead><tr><th>Orden</th><th>Ingreso</th><th>% acumulado población</th><th>Ingreso acumulado</th><th>% acumulado ingresos</th></tr></thead><tbody>'+rows.map(r=>`<tr><td>${r.i}</td><td>${money(r.x)}</td><td>${pct(r.px)}</td><td>${money(r.cum)}</td><td>${pct(r.py)}</td></tr>`).join('')+'</tbody>';
+ $('procedure').innerHTML=`<div class="step"><b>1. Datos:</b> ${n} ingresos.</div><div class="step"><b>2. Ordenamiento:</b> de menor a mayor.</div><div class="step"><b>3. Estadísticos:</b> media ${money(mean)}, mediana ${money(med)}, mínimo ${money(s[0])}, máximo ${money(s[n-1])}.</div><div class="step"><b>4. Acumulados:</b> se calcularon ingresos y porcentajes acumulados.</div><div class="step"><b>5. Curva:</b> se graficaron población acumulada e ingreso acumulado.</div><div class="step"><b>6. Áreas:</b> Área B = <strong>${num(areaB)}</strong>; Área A = <strong>${num(areaA)}</strong>; A+B = <strong>${num(areaSum)}</strong>.</div><div class="step"><b>7. Gini:</b> G = A / (A+B) = <strong>${num(areaA)} / ${num(areaSum)} = ${num(g)}</strong>. También se verifica mediante la fórmula estadística basada en los datos ordenados.</div><div class="step"><b>8. Resultado:</b> G = <strong>${num(g)}</strong>.</div>`;
+ let q50=mid.py,q80=top20.py,spread=s[n-1]-s[0],ratio=s[n-1]/mean;
+ $('analysis').innerHTML=`<p>Se analizaron <strong>${n} ingresos</strong>, con un mínimo de <strong>${money(s[0])}</strong> y un máximo de <strong>${money(s[n-1])}</strong>. La diferencia entre ambos extremos es de <strong>${money(spread)}</strong>.</p><p>El ingreso promedio es <strong>${money(mean)}</strong> y la mediana es <strong>${money(med)}</strong>. La comparación entre estos dos valores aporta información sobre la forma de la distribución, aunque por sí sola no determina el nivel de desigualdad.</p><p>El Gini de <strong>${num(g)}</strong> se ubica en el rango orientativo de <strong>${R[0].toLowerCase()}</strong>. Además, el 50% inferior concentra aproximadamente <strong>${pct(q50)}</strong> del ingreso total, mientras que el 20% inferior concentra aproximadamente <strong>${pct(q80)}</strong>. Estos porcentajes deben leerse junto con la Curva de Lorenz.</p>`;
+ $('conclusion').innerHTML=`<p>En conclusión, los ingresos analizados presentan un Coeficiente de Gini de <strong>${num(g)}</strong>, que dentro de la escala orientativa corresponde a <strong>${R[0].toLowerCase()}</strong>. La Curva de Lorenz permite visualizar la concentración: cuanto más se separa de la línea de igualdad, mayor es la desigualdad representada. En este conjunto, el 50% inferior reúne ${pct(q50)} del ingreso total, por lo que el resultado numérico y la representación gráfica deben interpretarse conjuntamente.</p>`;
+ draw();window.scrollTo({top:$('app').offsetTop-10,behavior:'smooth'});
+}
+function draw(){
+ let c=$('canvas'),r=c.getBoundingClientRect(),dpr=devicePixelRatio||1;c.width=r.width*dpr;c.height=r.height*dpr;let x=c.getContext('2d');x.setTransform(dpr,0,0,dpr,0,0);
+ let w=r.width,h=r.height,L=72,R=28,T=38,B=62,pw=w-L-R,ph=h-T-B;x.clearRect(0,0,w,h);x.font='12px Arial';
+ for(let i=0;i<=10;i++){let xx=L+pw*i/10,yy=T+ph*(1-i/10);x.strokeStyle='#e7ebf2';x.lineWidth=1;x.beginPath();x.moveTo(xx,T);x.lineTo(xx,T+ph);x.stroke();x.beginPath();x.moveTo(L,yy);x.lineTo(L+pw,yy);x.stroke();x.fillStyle='#667085';x.textAlign='center';x.fillText(i*10+'%',xx,T+ph+25);x.textAlign='right';x.fillText(i*10+'%',L-10,yy+4)}
+ x.strokeStyle='#555';x.lineWidth=1.5;x.beginPath();x.moveTo(L,T);x.lineTo(L,T+ph);x.lineTo(L+pw,T+ph);x.stroke();
+ x.fillStyle='#172033';x.font='bold 13px Arial';x.textAlign='center';x.fillText('Porcentaje acumulado de personas / hogares (%)',L+pw/2,h-10);
+ x.save();x.translate(16,T+ph/2);x.rotate(-Math.PI/2);x.fillText('Porcentaje acumulado de ingresos (%)',0,0);x.restore();
+ x.setLineDash([7,6]);x.strokeStyle='#8993a5';x.lineWidth=2;x.beginPath();x.moveTo(L,T+ph);x.lineTo(L+pw,T);x.stroke();x.setLineDash([]);
+ x.strokeStyle='#3157d5';x.lineWidth=3;x.beginPath();x.moveTo(L,T+ph);D.rows.forEach(q=>x.lineTo(L+pw*q.px,T+ph*(1-q.py)));x.stroke();
+ D.rows.forEach(q=>{let xx=L+pw*q.px,yy=T+ph*(1-q.py);x.fillStyle='#3157d5';x.beginPath();x.arc(xx,yy,3,0,Math.PI*2);x.fill()});
+ x.font='bold 12px Arial';x.textAlign='left';x.fillStyle='#667085';x.fillText('— Igualdad perfecta (Y = X)',L+10,T+18);x.fillStyle='#3157d5';x.fillText('— Curva de Lorenz',L+10,T+36);
+}
+function example(){manualValues=[];$('country').value='Colombia';$('input').value='1300000, 1500000, 1800000, 2000000, 2500000, 3000000, 4000000, 5500000, 8000000, 12000000';renderChips();calc()}
+function clearAll(){manualValues=[];$('input').value='';$('singleInput').value='';$('chips').innerHTML='';$('validation').innerHTML='';$('app').classList.add('hidden');D=null}
+function copyResult(){if(!D)return;navigator.clipboard?.writeText(`País/contexto: ${$('country').value||'Sin especificar'}\nCoeficiente de Gini: ${num(D.g)}\nÁrea A: ${num(D.areaA)}\nÁrea B: ${num(D.areaB)}\nObservaciones: ${D.n}\nIngreso mínimo: ${money(D.min)}\nIngreso máximo: ${money(D.max)}\nIngreso promedio: ${money(D.mean)}\nMediana: ${money(D.med)}\n\n${$('analysis').innerText}\n\n${$('conclusion').innerText}`).then(()=>alert('Resultado copiado.'))}
+function downloadReport(){
+ if(!D)return;
+ let rows=D.rows.map(q=>`<tr><td>${q.i}</td><td>${money(q.x)}</td><td>${pct(q.px)}</td><td>${money(q.cum)}</td><td>${pct(q.py)}</td></tr>`).join('');
+ let doc=`<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Informe Gini</title><style>body{font-family:Arial;max-width:950px;margin:35px auto;color:#172033;line-height:1.6}table{border-collapse:collapse;width:100%}th,td{border:1px solid #ddd;padding:7px;text-align:right}h1,h2{color:#3157d5}</style></head><body><h1>Informe de Desigualdad Económica</h1><h2>Coeficiente de Gini: ${num(D.g)}</h2><p>Observaciones: ${D.n}. Mínimo: ${money(D.min)}. Máximo: ${money(D.max)}. Media: ${money(D.mean)}. Mediana: ${money(D.med)}. Total: ${money(D.total)}.</p><h2>Datos</h2><p>${D.v.map(money).join(', ')}</p><h2>Tabla acumulada</h2><table><tr><th>Orden</th><th>Ingreso</th><th>% población</th><th>Acumulado</th><th>% ingresos</th></tr>${rows}</table><h2>Interpretación</h2>${$('giniText').innerHTML}${$('lorenzText').innerHTML}<h2>Análisis</h2>${$('analysis').innerHTML}<h2>Conclusión</h2>${$('conclusion').innerHTML}<p>La Curva de Lorenz se encuentra disponible en la aplicación. Para conservar el gráfico en PDF, utiliza Imprimir / Guardar PDF desde la aplicación.</p></body></html>`;
+ let a=document.createElement('a');a.href=URL.createObjectURL(new Blob([doc],{type:'text/html'}));a.download='informe_desigualdad_gini.html';a.click();
+}
+addEventListener('resize',()=>{if(D)draw()});
+</script>
+</body>
+</html>
